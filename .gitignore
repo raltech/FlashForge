@@ -1,0 +1,4 @@
+*.zip
+*.env
+cdk.out/*
+trash/*
