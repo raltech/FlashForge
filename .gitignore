@@ -1,4 +1,5 @@
 *.zip
 *.env
+*.lambda_env
 cdk.out/*
 trash/*
