@@ -129,4 +129,4 @@ def handler(event, context):
         "body": json.dumps(resp, cls=DecimalEncoder)
     }
 
-# http POST "${ENDPOINT_URL}/user/user01/add_card/654321/{\"words\":{\"en\":[\"see\",\"watch\",\"look\"],\"jp\":[\"見る\"]},\"sentences\":{\"en\":[\"I can see the mountains from my window.\",\"Let's watch a movie tonight.\",\"She looked at me and smiled.\"],\"jp\":[\"私は窓から山を見ることができます。\",\"今晩映画を見ましょう。\",\"彼女は私を見て笑顔を見せた。\"]}}"
+# http POST "${ENDPOINT_URL}/user/user01/add_card/123456/{\"words\":{\"en\":[\"see\",\"watch\",\"look\"],\"jp\":[\"見る\"]},\"sentences\":{\"en\":[\"I can see the mountains from my window.\",\"Let's watch a movie tonight.\",\"She looked at me and smiled.\"],\"jp\":[\"私は窓から山を見ることができます。\",\"今晩映画を見ましょう。\",\"彼女は私を見て笑顔を見せた。\"]}}"

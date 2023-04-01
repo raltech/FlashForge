@@ -113,4 +113,4 @@ def handler(event, context):
         "body": json.dumps(resp, cls=DecimalEncoder)
     }
 
-# http GET "${ENDPOINT_URL}/user/user01/get_user_cards"
+# http DELETE "${ENDPOINT_URL}/user/user01/123456"

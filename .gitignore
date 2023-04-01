@@ -3,3 +3,4 @@
 *.lambda_env
 cdk.out/*
 trash/*
+*.secret

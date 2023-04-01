@@ -11,9 +11,13 @@ ddb = boto3.resource("dynamodb")
 bucket_name = os.environ["FF_BUCKET_NAME"]
 card_table_name = ddb.Table(os.environ["FF_CARD_TABLE_NAME"])
 
+# load openai api key from .secret
+with open(".secret", "r") as f:
+    api_key = f.read()
+
 # setup openai api key
-openai.api_key = "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"
-os.environ["OPENAI_API_KEY"] = "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"
+openai.api_key = api_key
+os.environ["OPENAI_API_KEY"] = api_key
 os.environ["TRANSFORMERS_CACHE"] = "/tmp"
 
 # CORS (Cross-Origin Resource Sharing) headers to support cross-site HTTP requests
@@ -76,3 +80,5 @@ def handler(event, context):
         "headers": HEADERS,
         "body": json.dumps(resp, cls=DecimalEncoder)
     }
+
+# http GET "${ENDPOINT_URL}/user/username/en2jp/proof of concept"

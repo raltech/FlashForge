@@ -5,16 +5,19 @@ from boto3.dynamodb.conditions import Key
 import openai
 import urllib.parse
 
-
 # initialize boto3 resources
 s3 = boto3.resource("s3")
 ddb = boto3.resource("dynamodb")
 bucket_name = os.environ["FF_BUCKET_NAME"]
 table_name = ddb.Table(os.environ["FF_TABLE_NAME"])
 
+# load openai api key from .secret
+with open(".secret", "r") as f:
+    api_key = f.read()
+
 # setup openai api key
-openai.api_key = "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"
-os.environ["OPENAI_API_KEY"] = "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"
+openai.api_key = api_key
+os.environ["OPENAI_API_KEY"] = api_key
 os.environ["TRANSFORMERS_CACHE"] = "/tmp"
 
 # CORS (Cross-Origin Resource Sharing) headers to support cross-site HTTP requests
