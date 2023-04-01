@@ -27,26 +27,53 @@ class DecimalEncoder(json.JSONEncoder):
 # API handlers
 def handler(event, context):
     """
-    API handler for GET /user/{user_id}/get_user_cards
+    API handler for DELETE /user/{user_id}/{card_id}
     """
     
     try:
         # get path parameters
         path_params = event.get("pathParameters", {})
         user_id = path_params.get("user_id", "")
+        card_id = path_params.get("card_id", "")
 
         # decode url encoded parameters
         user_id = urllib.parse.unquote(user_id)
+        card_id = urllib.parse.unquote(card_id)
 
         # validate parameters
         if not user_id:
             raise ValueError("Invalid request. The path parameter 'user_id' is missing")
+        if not card_id:
+            raise ValueError("Invalid request. The path parameter 'card_id' is missing")
         
-        # get item from dynamodb
-        response = card_table_name.query(
-            KeyConditionExpression=Key("user_id").eq(user_id)
+        # check if user exists
+        response = user_table_name.get_item(
+            Key={
+                "user_id": user_id
+            }
         )
+        if "Item" not in response:
+            raise ValueError(f"User '{user_id}' not found")
         
+        # check if card exists
+        response = card_table_name.get_item(
+            Key={
+                "user_id": user_id,
+                "card_id": card_id
+            }
+        )
+        if "Item" not in response:
+            raise ValueError(f"Card '{card_id}' not found")
+        
+        # delete card
+        card_table_name.delete_item(
+            Key={
+                "user_id": user_id,
+                "card_id": card_id
+            }
+        )
+
+        # update order entry in user table
         # get order of cards from user table
         user_response = user_table_name.get_item(
             Key={
@@ -55,20 +82,22 @@ def handler(event, context):
         )
         user_item = user_response.get("Item", {})
         card_order = user_item.get("card_order", [])
-
-        # # sort cards by order
-        # sorted_cards = []
-        # for card_id in card_order:
-        #     for card in response["Items"]:
-        #         if card["card_id"] == card_id:
-        #             sorted_cards.append(card)
-        #             break
-
-        # # set response
-        # response["Items"] = sorted_cards
+        # remove card_id from card_order
+        card_order.remove(card_id)
+        # update card_order in user table
+        user_table_name.update_item(
+            Key={
+                "user_id": user_id
+            },
+            UpdateExpression="set card_order = :card_order, updated_at = :updated_at",
+            ExpressionAttributeValues={
+                ":card_order": card_order,
+                ":updated_at": datetime.now(timezone.utc).isoformat()
+            }
+        )
 
         # return response
-        resp = {"description": "success", "data": response["Items"], "card_order": card_order}
+        resp = {"description": f"Card '{card_id}' deleted successfully"}
 
         # set status code
         status_code = 200

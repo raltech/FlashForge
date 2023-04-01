@@ -9,7 +9,8 @@ import urllib.parse
 s3 = boto3.resource("s3")
 ddb = boto3.resource("dynamodb")
 bucket_name = os.environ["FF_BUCKET_NAME"]
-table_name = ddb.Table(os.environ["FF_TABLE_NAME"])
+card_table_name = ddb.Table(os.environ["FF_CARD_TABLE_NAME"])
+user_table_name = ddb.Table(os.environ["FF_USER_TABLE_NAME"])
 
 # CORS (Cross-Origin Resource Sharing) headers to support cross-site HTTP requests
 HEADERS = {
@@ -52,9 +53,43 @@ def handler(event, context):
         if not card_detail:
             raise ValueError("Invalid request. The path parameter 'card_detail' is missing")
         
+        # check if user exists
+        response = user_table_name.get_item(
+            Key={
+                "user_id": user_id
+            }
+        )
+        if "Item" not in response:
+            # create user
+            print(f"WARNING. The user '{user_id}' does not exist. Creating user...")
+            current_time = datetime.now(timezone.utc).isoformat()
+            user_table_name.put_item(
+                Item={
+                    "user_id": user_id,
+                    "card_order": [],
+                    "created_at": current_time,
+                    "updated_at": current_time
+                }
+            )
+            card_order = []
+        else:
+            # get user card_order
+            card_order = response["Item"]["card_order"]
+        
+        # check if card already exists
+        response = card_table_name.get_item(
+            Key={
+                "user_id": user_id,
+                "card_id": card_id
+            }
+        )
+        if "Item" in response:
+            raise ValueError(f"Invalid request. The card '{card_id}' already exists")
+            # print(f"WARNING. The card '{card_id}' already exists")
+        
         # add item to dynamodb
         current_time = datetime.now(timezone.utc).isoformat()
-        table_name.put_item(
+        card_table_name.put_item(
             Item={
                 "user_id": user_id,
                 "card_id": card_id,
@@ -64,8 +99,21 @@ def handler(event, context):
             }
         )
 
+        # add card_id to user card_order
+        card_order.append(card_id)
+        user_table_name.update_item(
+            Key={
+                "user_id": user_id
+            },
+            UpdateExpression="set card_order = :card_order, updated_at = :updated_at",
+            ExpressionAttributeValues={
+                ":card_order": card_order,
+                ":updated_at": current_time
+            }
+        )
+
         # return response
-        resp = {"description": "success"}
+        resp = {"description": "success", "card_order": card_order}
 
         # set status code
         status_code = 200

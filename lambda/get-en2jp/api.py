@@ -9,7 +9,7 @@ import urllib.parse
 s3 = boto3.resource("s3")
 ddb = boto3.resource("dynamodb")
 bucket_name = os.environ["FF_BUCKET_NAME"]
-table_name = ddb.Table(os.environ["FF_TABLE_NAME"])
+card_table_name = ddb.Table(os.environ["FF_CARD_TABLE_NAME"])
 
 # setup openai api key
 openai.api_key = "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"
@@ -31,7 +31,7 @@ class DecimalEncoder(json.JSONEncoder):
 # API handlers
 def handler(event, context):
     """
-    API handler for GET /user/{user_id}/jp2en/{prompt_txt}
+    API handler for GET /user/{user_id}/en2jp/{prompt_txt}
     """
     
     try:
@@ -50,12 +50,15 @@ def handler(event, context):
 
         completion = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
+            temperature=0.0,
             messages=[
                     {"role": "system", "content": system_context},
-                    {"role": "user", "content": prompt_txt+'\n{"words":['}
+                    {"role": "user", "content": prompt_txt+'\n{"words":{"en":["'+prompt_txt+'"],"jp":["'}
                 ]
             )
-        output = '{"words":['+completion["choices"][0]["message"]["content"]
+        output = '{"words":{"en":["'+prompt_txt+'"],"jp":["'+completion["choices"][0]["message"]["content"]
+        # convert output to json
+        output = json.loads(output)
 
         resp = {"description": "success", "input": str(prompt_txt), 
                 "output": str(output)}
