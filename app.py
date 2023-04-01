@@ -224,6 +224,6 @@ FlashForge(
 app.synth()
 
 """
-export ENDPOINT_URL=https://14m1ib8x98.execute-api.us-east-1.amazonaws.com/prod/
+export ENDPOINT_URL=https://6in8tizdac.execute-api.us-east-1.amazonaws.com/prod/
 http GET "${ENDPOINT_URL}/user/username/jp2en/概念実証"
 """
