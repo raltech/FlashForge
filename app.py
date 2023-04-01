@@ -23,7 +23,11 @@ class FlashForge(core.Stack):
         ff_table = ddb.Table(
             self, "FF_Table",
             partition_key = ddb.Attribute(
-                name="item_id", 
+                name="user_id", 
+                type=ddb.AttributeType.STRING
+            ),
+            sort_key = ddb.Attribute(
+                name="card_id",
                 type=ddb.AttributeType.STRING
             ),
             billing_mode = ddb.BillingMode.PAY_PER_REQUEST,
@@ -58,6 +62,18 @@ class FlashForge(core.Stack):
             memory_size=256,
             timeout=core.Duration.seconds(60),
             **common_params) 
+        post_add_card_lambda = _lambda.DockerImageFunction(
+            self, "POSTADDCARD",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/post-add-card"),
+            memory_size=256,
+            timeout=core.Duration.seconds(60),
+            **common_params)
+        get_user_cards_lambda = _lambda.DockerImageFunction(
+            self, "GETUSERCARDS",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/get-user-cards"),
+            memory_size=256,
+            timeout=core.Duration.seconds(60),
+            **common_params)
 
         # grant permission
         get_jp2en_lambda.add_to_role_policy(
@@ -74,18 +90,37 @@ class FlashForge(core.Stack):
                 resources=["*"],
             )
         )
+        post_add_card_lambda.add_to_role_policy(
+            _iam.PolicyStatement(
+                effect=_iam.Effect.ALLOW,
+                actions=["*"],
+                resources=["*"],
+            )
+        )
+        get_user_cards_lambda.add_to_role_policy(
+            _iam.PolicyStatement(
+                effect=_iam.Effect.ALLOW,
+                actions=["*"],
+                resources=["*"],
+            )
+        )
+
 
         # Grant table permissions to lambda functions to table
         ff_table.grant_read_write_data(get_jp2en_lambda)
         ff_table.grant_read_write_data(get_en2jp_lambda)
+        ff_table.grant_read_write_data(post_add_card_lambda)
+        ff_table.grant_read_write_data(get_user_cards_lambda)
 
         # Grant bucket permissions to lambda functions
         bucket.grant_read_write(get_jp2en_lambda)
         bucket.grant_read_write(get_en2jp_lambda)
+        bucket.grant_read_write(post_add_card_lambda)
+        bucket.grant_read_write(get_user_cards_lambda)
 
         # define API Gateway
         api = apigw.RestApi(
-            self, "MULTIONAPI",
+            self, "FFAPI",
             default_cors_preflight_options=apigw.CorsOptions(
                 allow_origins=apigw.Cors.ALL_ORIGINS,
                 allow_methods=apigw.Cors.ALL_METHODS,
@@ -95,6 +130,21 @@ class FlashForge(core.Stack):
         # Link API calls to lambda functions
         user = api.root.add_resource("user")
         user_api = user.add_resource("{user_id}")
+        # get user cards
+        get_user_cards = user_api.add_resource("get_user_cards")
+        get_user_cards.add_method(
+            "GET",
+            apigw.LambdaIntegration(get_user_cards_lambda)
+        )
+        # add card
+        add_card = user_api.add_resource("add_card")
+        add_card_api = add_card.add_resource("{card_id}")
+        add_card_detail_api = add_card_api.add_resource("{card_detail}")
+        add_card_detail_api.add_method(
+            "POST",
+            apigw.LambdaIntegration(post_add_card_lambda)
+        )
+        # auto completion 
         jp2en_prompt = user_api.add_resource("jp2en")
         jp2en_prompt_api = jp2en_prompt.add_resource("{prompt_txt}")
         jp2en_prompt_api.add_method(
@@ -131,6 +181,6 @@ FlashForge(
 app.synth()
 
 """
-export ENDPOINT_URL=https://xxxxxxxxxx.execute-api.ap-northeast-1.amazonaws.com/prod
-http GET "${ENDPOINT_URL}/prompt/thisisatest"
+export ENDPOINT_URL=https://14m1ib8x98.execute-api.us-east-1.amazonaws.com/prod/
+http GET "${ENDPOINT_URL}/user/username/jp2en/概念実証"
 """

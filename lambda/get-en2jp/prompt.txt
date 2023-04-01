@@ -1,0 +1,18 @@
+Generate a few Japanese words corresponding to the given English word. Provide example sentences using these English words. Output in JSON format. Each word should be ordered so that the first word is the most common translation.
+
+###
+look
+{"words":["見る","観る","眺める"], "sentences":{"en":["I will look at the menu and decide what to order.","She likes to look at the stars at night.","He looked out the window and saw the beautiful scenery."],"jp":["メニューを見て、何を注文するか決めます。","彼女は夜に星を見るのが好きです。","彼は窓の外を眺めて、美しい景色を見ました。"]}}
+
+beautiful
+{"words":["美しい","綺麗な","麗しい"], "sentences":{"en":["The sunset over the ocean was beautiful.","She has a beautiful singing voice.","The traditional Japanese garden is a beautiful and peaceful place."],"jp":["海の上の夕日は美しい。","彼女は美しい歌声を持っている。","伝統的な日本庭園は美しくて平和な場所です。"]}}
+
+sun
+{"words":["太陽","陽光"], "sentences":{"en":["The sun was shining brightly in the sky.","We enjoyed the warmth of the sun on the beach."],"jp":["空に太陽が明るく輝いていた。","私たちはビーチで太陽の暖かさを楽しんだ。"]}}
+
+memorable
+{"words":["思い出に残る","印象的な","記憶に残る"], "sentences":{"en":["The concert was a memorable experience for everyone involved.","Their wedding was a memorable and joyous occasion.","We had a memorable trip to Japan last year."],"jp":["そのコンサートは関係者全員にとって思い出に残る経験だった。","彼らの結婚式は印象的で喜ばしい場でした。","私たちは去年、記憶に残る日本旅行をしました。"]}}
+
+corroborate
+{"words":["裏付ける","確証する"], "sentences":{"en":["The witness's testimony helped corroborate the defendant's alibi.","The evidence found at the scene corroborates the victim's story."],"jp":["証人の証言が被告人のアリバイを裏付けるのに役立った。","現場で見つかった証拠が、被害者の話を確証する。"]}}
+
