@@ -1,16 +1,8 @@
 import json, os, uuid, decimal
-from datetime import datetime, timezone
-import boto3
-from boto3.dynamodb.conditions import Key
 import openai
 import urllib.parse
 import time
-
-# initialize boto3 resources
-s3 = boto3.resource("s3")
-ddb = boto3.resource("dynamodb")
-bucket_name = os.environ["FF_BUCKET_NAME"]
-card_table_name = ddb.Table(os.environ["FF_CARD_TABLE_NAME"])
+import ast
 
 # load openai api key from .secret
 with open(".secret", "r") as f:
@@ -36,26 +28,26 @@ class DecimalEncoder(json.JSONEncoder):
 # API handlers
 def handler(event, context):
     """
-    API handler for GET /user/{user_id}/en2jp/{prompt_txt}
+    API handler for GET /user/{user_id}/en2jp/word/{word}
     """
     
     try:
         start = time.time()
         path_params = event.get("pathParameters", {})
-        prompt_txt = path_params.get("prompt_txt", "")
+        word = path_params.get("word", "")
         user_id = path_params.get("user_id", "")
-        prompt_txt = urllib.parse.unquote(prompt_txt)
+        word = urllib.parse.unquote(word)
         user_id = urllib.parse.unquote(user_id)
-        print("user_id: ", user_id, "prompt_txt: ", prompt_txt)
-        if not prompt_txt:
-            raise ValueError("Invalid request. The path parameter 'prompt_txt' is missing")
-        print("time elapsed: ", time.time() - start)
+        print("user_id: ", user_id, "word: ", word)
+        if not word:
+            raise ValueError("Invalid request. The path parameter 'word' is missing")
+        print("1: time elapsed: ", time.time() - start)
 
         start = time.time()
         # read text file
         with open("prompt.txt", "r") as f:
             system_context = f.read()
-        print("time elapsed: ", time.time() - start)
+        print("2: time elapsed: ", time.time() - start)
 
         start = time.time()
         completion = openai.ChatCompletion.create(
@@ -63,27 +55,43 @@ def handler(event, context):
             temperature=0.0,
             messages=[
                     {"role": "system", "content": system_context},
-                    {"role": "user", "content": '"'+prompt_txt+'"'}
+                    {"role": "user", "content": "rise to one's feet"},
+                    {"role": "assistant", "content": '["立ち上がる"]'},
+                    {"role": "user", "content": "corroborate"},
+                    {"role": "assistant", "content": '["裏付ける","確証する"]'},
+                    {"role": "user", "content": "initialize"},
+                    {"role": "assistant", "content": '["初期化する","初期設定する"]'},
+                    {"role": "user", "content": "proof of concept"},
+                    {"role": "assistant", "content": '["概念実証"]'},
+                    {"role": "user", "content": "long to"},
+                    {"role": "assistant", "content": '["...したいと思う","...を望む"]'},
+                    {"role": "user", "content": "be in charge of"},
+                    {"role": "assistant", "content": '["...を担当している","...を管理している"]'},
+                    {"role": "user", "content": "bazinga"},
+                    {"role": "assistant", "content": '["バジンガ"]'},
+                    {"role": "user", "content": "jiszap"},
+                    {"role": "assistant", "content": '["ERROR: No translation found for jiszap"]'},
+                    {"role": "user", "content": word}
                 ]
             )
-        print("time elapsed: ", time.time() - start)
+        print("3: time elapsed: ", time.time() - start)
 
         start = time.time()
         output = completion["choices"][0]["message"]["content"]
 
         # convert output to json
         print("raw output: ", output)
-        output = json.loads(output)
+        output = ast.literal_eval(output)
         print("json output: ", output)
 
         # if json contains "error", raise ValueError
         if "error" in output:
             raise ValueError(output["error"])
 
-        resp = {"description": "success", "input": str(prompt_txt), 
+        resp = {"description": "success", "input": str(word), 
                 "output": output}
-        print("input: ", prompt_txt, "output: ", output)
-        print("time elapsed: ", time.time() - start)
+        print("input: ", word, "output: ", output)
+        print("4: time elapsed: ", time.time() - start)
 
         status_code = 200
     except ValueError as e:
@@ -98,4 +106,4 @@ def handler(event, context):
         "body": json.dumps(resp, cls=DecimalEncoder)
     }
 
-# http GET "${ENDPOINT_URL}/user/username/en2jp/proof of concept"
+# http GET "${ENDPOINT_URL}/user/114514/en2jp/word/behave"

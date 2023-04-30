@@ -61,71 +61,59 @@ class FlashForge(core.Stack):
             }
         }
 
-        # define lambda functions
-        get_jp2en_lambda = _lambda.DockerImageFunction(
-            self, "GETJP2EN",
-            code=_lambda.DockerImageCode.from_image_asset("./lambda/get-jp2en"),
+        # define lambda functions for en2jp (base is jp, target is en)
+        get_en2jp_word_lambda = _lambda.DockerImageFunction(
+            self, "GET-EN2JP-WORD",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/en2jp/get-en2jp-word"),
             memory_size=256,
             timeout=core.Duration.seconds(60),
             **common_params) 
-        get_en2jp_lambda = _lambda.DockerImageFunction(
-            self, "GETEN2JP",
-            code=_lambda.DockerImageCode.from_image_asset("./lambda/get-en2jp"),
-            memory_size=256,
-            timeout=core.Duration.seconds(60),
-            **common_params) 
-        get_en2jp_sentence_lambda = _lambda.DockerImageFunction(
-            self, "GETEN2JPSENTENCE",
-            code=_lambda.DockerImageCode.from_image_asset("./lambda/get-en2jp-sentence"),
+        get_en2jp_word_sentence_lambda = _lambda.DockerImageFunction(
+            self, "GET-EN2JP-WORD-SENTENCE",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/en2jp/get-en2jp-word-sentence"),
             memory_size=256,
             timeout=core.Duration.seconds(60),
             **common_params)
+        get_en2jp_sentence_lambda = _lambda.DockerImageFunction(
+            self, "GET-EN2JP-SENTENCE",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/en2jp/get-en2jp-sentence"),
+            memory_size=256,
+            timeout=core.Duration.seconds(60),
+            **common_params)
+        
+        # define lambda functions for system
         post_add_card_lambda = _lambda.DockerImageFunction(
-            self, "POSTADDCARD",
-            code=_lambda.DockerImageCode.from_image_asset("./lambda/post-add-card"),
+            self, "POST-ADD-CARD",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/system/post-add-card"),
             memory_size=256,
             timeout=core.Duration.seconds(60),
             **common_params)
         get_user_cards_lambda = _lambda.DockerImageFunction(
-            self, "GETUSERCARDS",
-            code=_lambda.DockerImageCode.from_image_asset("./lambda/get-user-cards"),
+            self, "GET-USER-CARDS",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/system/get-user-cards"),
             memory_size=256,
             timeout=core.Duration.seconds(60),
             **common_params)
         delete_user_card_lambda = _lambda.DockerImageFunction(
-            self, "DELETEUSERCARD",
-            code=_lambda.DockerImageCode.from_image_asset("./lambda/delete-user-card"),
+            self, "DELETE-USER-CARD",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/system/delete-user-card"),
             memory_size=256,
             timeout=core.Duration.seconds(60),
             **common_params)
         post_add_user_lambda = _lambda.DockerImageFunction(
-            self, "POSTADDUSER",
-            code=_lambda.DockerImageCode.from_image_asset("./lambda/post-add-user"),
+            self, "POST-ADD-USER",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/system/post-add-user"),
             memory_size=256,
             timeout=core.Duration.seconds(60),
             **common_params)
         get_user_name_lambda = _lambda.DockerImageFunction(
-            self, "GETUSERNAME",
-            code=_lambda.DockerImageCode.from_image_asset("./lambda/get-user-name"),
+            self, "GET-USER-NAME",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/system/get-user-name"),
             memory_size=256,
             timeout=core.Duration.seconds(60),
             **common_params)
 
-        # grant permission
-        get_jp2en_lambda.add_to_role_policy(
-            _iam.PolicyStatement(
-                effect=_iam.Effect.ALLOW,
-                actions=["*"],
-                resources=["*"],
-            )
-        )
-        get_en2jp_lambda.add_to_role_policy(
-            _iam.PolicyStatement(
-                effect=_iam.Effect.ALLOW,
-                actions=["*"],
-                resources=["*"],
-            )
-        )
+        # grant permission to lambda functions to access dynamoDB
         post_add_card_lambda.add_to_role_policy(
             _iam.PolicyStatement(
                 effect=_iam.Effect.ALLOW,
@@ -161,18 +149,8 @@ class FlashForge(core.Stack):
                 resources=["*"],
             )
         )
-        get_en2jp_sentence_lambda.add_to_role_policy(
-            _iam.PolicyStatement(
-                effect=_iam.Effect.ALLOW,
-                actions=["*"],
-                resources=["*"],
-            )
-        )
-
 
         # Grant table permissions to lambda functions to card table
-        ff_card_table.grant_read_write_data(get_jp2en_lambda)
-        ff_card_table.grant_read_write_data(get_en2jp_lambda)
         ff_card_table.grant_read_write_data(post_add_card_lambda)
         ff_card_table.grant_read_write_data(get_user_cards_lambda)
         ff_card_table.grant_read_write_data(delete_user_card_lambda)
@@ -187,8 +165,6 @@ class FlashForge(core.Stack):
         ff_user_table.grant_read_write_data(get_user_name_lambda)
 
         # Grant bucket permissions to lambda functions
-        bucket.grant_read_write(get_jp2en_lambda)
-        bucket.grant_read_write(get_en2jp_lambda)
         bucket.grant_read_write(post_add_card_lambda)
         bucket.grant_read_write(get_user_cards_lambda)
         bucket.grant_read_write(delete_user_card_lambda)
@@ -240,21 +216,25 @@ class FlashForge(core.Stack):
             "POST",
             apigw.LambdaIntegration(post_add_card_lambda)
         )
-        # auto completion 
-        jp2en_prompt = user_api.add_resource("jp2en")
-        jp2en_prompt_api = jp2en_prompt.add_resource("{prompt_txt}")
-        jp2en_prompt_api.add_method(
+
+        """Base Japanese -> Target English"""
+        # word completion
+        en2jp = user_api.add_resource("en2jp")
+
+        en2jp_word = en2jp.add_resource("word")
+        en2jp_word_api = en2jp_word.add_resource("{word}")
+        en2jp_word_api.add_method(
             "GET",
-            apigw.LambdaIntegration(get_jp2en_lambda)
+            apigw.LambdaIntegration(get_en2jp_word_lambda)
         )
-        en2jp_prompt = user_api.add_resource("en2jp")
-        en2jp_prompt_api = en2jp_prompt.add_resource("{prompt_txt}")
-        en2jp_prompt_api.add_method(
+        # sentence completion
+        en2jp_word_sentence_api = en2jp_word_api.add_resource("sentence")
+        en2jp_word_sentence_api.add_method(
             "GET",
-            apigw.LambdaIntegration(get_en2jp_lambda)
+            apigw.LambdaIntegration(get_en2jp_word_sentence_lambda)
         )
-        # get en2jp sentence
-        en2jp_sentence = user_api.add_resource("en2jp_sentence")
+        # generate en2jp sentences
+        en2jp_sentence = en2jp.add_resource("sentence")
         en2jp_sentence_diff = en2jp_sentence.add_resource("difficulty")
         en2jp_sentence_diff_api = en2jp_sentence_diff.add_resource("{difficulty}")
         en2jp_sentence_context = en2jp_sentence_diff_api.add_resource("context")

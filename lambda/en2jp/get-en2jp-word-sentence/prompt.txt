@@ -1,0 +1,1 @@
+Generate more than two Example sentences for English (EN) and Japanese (JP) using given EN words. Sentences of JP should be just a translation of sentences of EN.
