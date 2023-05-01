@@ -1,0 +1,23 @@
+Generate a English sentence based on the context input given in Japanese. The difficulty of the sentence and words used in it should be based on the difficulty input. Difficulty has three levels: すごく簡単, 簡単, 普通, 難しい, すごく難しい。Output should be a JSON object with the English sentence as the value for the key "en" and the Japanese sentence as the value for the key "jp".
+
+context: 植物, 自然
+syntax difficulty: 
+word difficulty: 
+content difficulty: すごく簡単
+output: {"en": "Plants are beautiful and important in nature, helping to make air and give food to animals.", "jp": "植物は美しく、自然界で重要であり、空気を作り、動物に食物を与える役割があります。"}
+
+context: 日常, 大学, 恋愛
+difficulty: 簡単
+output: {"en": "During our time at the university, I met my wonderful girlfriend, and ever since then, we have been enjoying our everyday life together, sharing laughter, studying, and making cherished memories.", "jp": "大学で素晴らしい彼女に出会い、それ以来、一緒に日常生活を楽しんでおり、笑いを共有し、勉強し、大切な思い出を作りながら過ごしています。"}
+
+context: SF, ホラー
+difficulty: 普通
+output: {"en": "In the thrilling world of science fiction and horror, a group of survivors must navigate a post-apocalyptic wasteland filled with terrifying creatures and mysterious technology.", "jp": "SFとホラーのスリリングな世界では、恐ろしい生物と神秘的な技術で満ちたポストアポカリプスの荒廃した土地を生き残りグループが慎重に進む必要があります。"}
+
+context: 仕事, 人間関係
+difficulty: すごく難しい
+output: {"en": "Navigating the labyrinthine intricacies of workplace interpersonal relationships necessitates a profound comprehension of human behavioral idiosyncrasies, as well as an astute ability to predict and adapt to the ever-evolving sociopolitical dynamics inherent to such environments.", "jp": "職場の人間関係の複雑で入り組んだ構造を理解するためには、人間の行動の特異性についての深い理解と、そのような環境に固有の絶えず進化する社会政治的ダイナミクスに予測し、適応する鋭い能力が必要です。"}
+
+context: 政治, 中世, ドイツ
+difficulty:すごく難しい
+output: {"en": "The convoluted political landscape of medieval Germany, replete with an array of territorial principalities, ecclesiastical domains, and intricate feudal allegiances, engendered a milieu necessitating astute diplomatic acumen and a comprehensive understanding of the multifarious dimensions of power dynamics.", "jp": "中世ドイツの複雑な政治状況は、さまざまな領土諸侯国、教会領、入り組んだ封建的忠誠関係が入り混じり、鋭い外交手腕と権力ダイナミクスの多面的な側面を理解する包括的な知識が必要な状況を生み出しました。"}

@@ -1,18 +1,31 @@
-Generate a few Japanese words corresponding to the given English word. Provide example sentences using these English words. Output in JSON format. Each word should be ordered so that the first word is the most common translation.
+Generate a few Japanese words corresponding to the given English input. Provide example sentences using these English inputs. Output must be in JSON format. Each word should be ordered so that the first word is the most common translation. Sentences need to contain different usage of the given word (e.g. part of speech / intransitive verb or transitive verb). Inputs can be both single-word or phrase. 
 
-###
-look
-{"words":["見る","観る","眺める"], "sentences":{"en":["I will look at the menu and decide what to order.","She likes to look at the stars at night.","He looked out the window and saw the beautiful scenery."],"jp":["メニューを見て、何を注文するか決めます。","彼女は夜に星を見るのが好きです。","彼は窓の外を眺めて、美しい景色を見ました。"]}}
 
-beautiful
-{"words":["美しい","綺麗な","麗しい"], "sentences":{"en":["The sunset over the ocean was beautiful.","She has a beautiful singing voice.","The traditional Japanese garden is a beautiful and peaceful place."],"jp":["海の上の夕日は美しい。","彼女は美しい歌声を持っている。","伝統的な日本庭園は美しくて平和な場所です。"]}}
+# Refer the following examples 
+## If input exist
 
-sun
-{"words":["太陽","陽光"], "sentences":{"en":["The sun was shining brightly in the sky.","We enjoyed the warmth of the sun on the beach."],"jp":["空に太陽が明るく輝いていた。","私たちはビーチで太陽の暖かさを楽しんだ。"]}}
+input : "rise to one's feet"
+{"en":{"words":["rise to one's feet"],"sentences":["The audience rose to their feet to give the performer a standing ovation.","She rose to her feet to greet her guests."]},"jp":{"words":["立ち上がる"],"sentences":["聴衆は演者にスタンディングオベーションを送るために立ち上がりました。","彼女は彼女のゲストを迎えるために立ち上がりました。"]}}
 
-memorable
-{"words":["思い出に残る","印象的な","記憶に残る"], "sentences":{"en":["The concert was a memorable experience for everyone involved.","Their wedding was a memorable and joyous occasion.","We had a memorable trip to Japan last year."],"jp":["そのコンサートは関係者全員にとって思い出に残る経験だった。","彼らの結婚式は印象的で喜ばしい場でした。","私たちは去年、記憶に残る日本旅行をしました。"]}}
+input : "corroborate"
+{"en":{"words":["corroborate"],"sentences":["The witness's testimony helped corroborate the defendant's alibi.","The evidence found at the scene corroborates the victim's story."]},"jp":{"words":["裏付ける","確証する"],"sentences":["証人の証言が被告人のアリバイを裏付けるのに役立った。","現場で見つかった証拠が、被害者の話を確証する。"]}}
 
-corroborate
-{"words":["裏付ける","確証する"], "sentences":{"en":["The witness's testimony helped corroborate the defendant's alibi.","The evidence found at the scene corroborates the victim's story."],"jp":["証人の証言が被告人のアリバイを裏付けるのに役立った。","現場で見つかった証拠が、被害者の話を確証する。"]}}
+input : "initialize"
+{"en":{"words":["initialize"],"sentences":["The computer must be initialized before it can be used.","The program was initialized with the default settings."]},"jp":{"words":["初期化する","初期設定する"],"sentences":["コンピューターを使用する前に初期化する必要があります。","プログラムはデフォルトの設定で初期化されました。"]}}
 
+input : "long to"
+{"en":{"words":["long to"],"sentences":["I long to see my family again.","She longed to be free of her responsibilities."]},"jp":{"words":["...したい","...を望む"],"sentences":["家族に再び会いたいと切望しています。","彼女は自分の責任から自由になりたいと望んでいました。"],}}
+
+input : "bazinga"
+{"en":{"words":["bazinga"],"sentences":["After successfully pulling off the prank, John turned to his friends and triumphantly exclaimed, 'Bazinga!'"]},"jp":{"words":["バジンガ"],"sentences":["ジョンがいたずらに成功した後、友達に向かって得意げに叫んだ、「バジンガ！」"]}}
+
+## If word doesn't exist
+
+input  : "{non-existing-input}"
+{"error" : "The input  : '{non-existing-input}' doesn't exist.", "reason" : <reason>}
+
+
+=======================================================
+
+
+generate the json-format output for a input : 

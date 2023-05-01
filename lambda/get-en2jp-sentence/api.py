@@ -4,7 +4,6 @@ import boto3
 from boto3.dynamodb.conditions import Key
 import openai
 import urllib.parse
-import time
 
 # initialize boto3 resources
 s3 = boto3.resource("s3")
@@ -36,39 +35,29 @@ class DecimalEncoder(json.JSONEncoder):
 # API handlers
 def handler(event, context):
     """
-    API handler for GET /user/{user_id}/en2jp/{prompt_txt}
+    API handler for GET /user/{user_id}/en2jp_sentence/difficulty/{difficulty}/context/{context}
     """
     
     try:
-        start = time.time()
         path_params = event.get("pathParameters", {})
-        prompt_txt = path_params.get("prompt_txt", "")
-        user_id = path_params.get("user_id", "")
-        prompt_txt = urllib.parse.unquote(prompt_txt)
-        user_id = urllib.parse.unquote(user_id)
-        print("user_id: ", user_id, "prompt_txt: ", prompt_txt)
-        if not prompt_txt:
-            raise ValueError("Invalid request. The path parameter 'prompt_txt' is missing")
-        print("time elapsed: ", time.time() - start)
+        difficulty = path_params.get("difficulty", "")
+        context = path_params.get("context", "")
+        difficulty = urllib.parse.unquote(difficulty)
+        context = urllib.parse.unquote(context)
+        print("difficulty: ", difficulty , "context: ", context)
 
-        start = time.time()
         # read text file
         with open("prompt.txt", "r") as f:
             system_context = f.read()
-        print("time elapsed: ", time.time() - start)
 
-        start = time.time()
         completion = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            temperature=0.0,
+            temperature=0.7,
             messages=[
                     {"role": "system", "content": system_context},
-                    {"role": "user", "content": '"'+prompt_txt+'"'}
+                    {"role": "user", "content": '\ncontext:' + context + '\ndifficulty:' + difficulty + '\noutput:'}
                 ]
             )
-        print("time elapsed: ", time.time() - start)
-
-        start = time.time()
         output = completion["choices"][0]["message"]["content"]
 
         # convert output to json
@@ -80,10 +69,7 @@ def handler(event, context):
         if "error" in output:
             raise ValueError(output["error"])
 
-        resp = {"description": "success", "input": str(prompt_txt), 
-                "output": output}
-        print("input: ", prompt_txt, "output: ", output)
-        print("time elapsed: ", time.time() - start)
+        resp = {"description": "success", "context": context, "difficulty": difficulty, "output": output}
 
         status_code = 200
     except ValueError as e:

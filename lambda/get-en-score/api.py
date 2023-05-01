@@ -4,7 +4,6 @@ import boto3
 from boto3.dynamodb.conditions import Key
 import openai
 import urllib.parse
-import time
 
 # initialize boto3 resources
 s3 = boto3.resource("s3")
@@ -40,7 +39,6 @@ def handler(event, context):
     """
     
     try:
-        start = time.time()
         path_params = event.get("pathParameters", {})
         prompt_txt = path_params.get("prompt_txt", "")
         user_id = path_params.get("user_id", "")
@@ -49,15 +47,11 @@ def handler(event, context):
         print("user_id: ", user_id, "prompt_txt: ", prompt_txt)
         if not prompt_txt:
             raise ValueError("Invalid request. The path parameter 'prompt_txt' is missing")
-        print("time elapsed: ", time.time() - start)
 
-        start = time.time()
         # read text file
         with open("prompt.txt", "r") as f:
             system_context = f.read()
-        print("time elapsed: ", time.time() - start)
 
-        start = time.time()
         completion = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             temperature=0.0,
@@ -66,9 +60,6 @@ def handler(event, context):
                     {"role": "user", "content": '"'+prompt_txt+'"'}
                 ]
             )
-        print("time elapsed: ", time.time() - start)
-
-        start = time.time()
         output = completion["choices"][0]["message"]["content"]
 
         # convert output to json
@@ -83,7 +74,6 @@ def handler(event, context):
         resp = {"description": "success", "input": str(prompt_txt), 
                 "output": output}
         print("input: ", prompt_txt, "output: ", output)
-        print("time elapsed: ", time.time() - start)
 
         status_code = 200
     except ValueError as e:

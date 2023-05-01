@@ -60,18 +60,7 @@ def handler(event, context):
             }
         )
         if "Item" not in response:
-            # create user
-            print(f"WARNING. The user '{user_id}' does not exist. Creating user...")
-            current_time = datetime.now(timezone.utc).isoformat()
-            user_table_name.put_item(
-                Item={
-                    "user_id": user_id,
-                    "card_order": [],
-                    "created_at": current_time,
-                    "updated_at": current_time
-                }
-            )
-            card_order = []
+            raise ValueError(f"The user '{user_id}' does not exist")
         else:
             # get user card_order
             card_order = response["Item"]["card_order"]
@@ -83,34 +72,46 @@ def handler(event, context):
                 "card_id": card_id
             }
         )
-        if "Item" in response:
-            raise ValueError(f"Invalid request. The card '{card_id}' already exists")
-            # print(f"WARNING. The card '{card_id}' already exists")
-        
-        # add item to dynamodb
-        current_time = datetime.now(timezone.utc).isoformat()
-        card_table_name.put_item(
-            Item={
-                "user_id": user_id,
-                "card_id": card_id,
-                "card_detail": card_detail,
-                "created_at": current_time,
-                "updated_at": current_time
-            }
-        )
 
-        # add card_id to user card_order
-        card_order.append(card_id)
-        user_table_name.update_item(
-            Key={
-                "user_id": user_id
-            },
-            UpdateExpression="set card_order = :card_order, updated_at = :updated_at",
-            ExpressionAttributeValues={
-                ":card_order": card_order,
-                ":updated_at": current_time
-            }
-        )
+        if "Item" in response:
+            # update card_detail
+            current_time = datetime.now(timezone.utc).isoformat()
+            card_table_name.update_item(
+                Key={
+                    "user_id": user_id,
+                    "card_id": card_id
+                },
+                UpdateExpression="set card_detail = :card_detail, updated_at = :updated_at",
+                ExpressionAttributeValues={
+                    ":card_detail": card_detail,
+                    ":updated_at": current_time
+                }
+            )
+        else:
+            # add new item to dynamodb
+            current_time = datetime.now(timezone.utc).isoformat()
+            card_table_name.put_item(
+                Item={
+                    "user_id": user_id,
+                    "card_id": card_id,
+                    "card_detail": card_detail,
+                    "created_at": current_time,
+                    "updated_at": current_time
+                }
+            )
+
+            # add card_id to user card_order
+            card_order.append(card_id)
+            user_table_name.update_item(
+                Key={
+                    "user_id": user_id
+                },
+                UpdateExpression="set card_order = :card_order, updated_at = :updated_at",
+                ExpressionAttributeValues={
+                    ":card_order": card_order,
+                    ":updated_at": current_time
+                }
+            )
 
         # return response
         resp = {"description": "success", "card_order": card_order}

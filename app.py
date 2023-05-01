@@ -74,6 +74,12 @@ class FlashForge(core.Stack):
             memory_size=256,
             timeout=core.Duration.seconds(60),
             **common_params) 
+        get_en2jp_sentence_lambda = _lambda.DockerImageFunction(
+            self, "GETEN2JPSENTENCE",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/get-en2jp-sentence"),
+            memory_size=256,
+            timeout=core.Duration.seconds(60),
+            **common_params)
         post_add_card_lambda = _lambda.DockerImageFunction(
             self, "POSTADDCARD",
             code=_lambda.DockerImageCode.from_image_asset("./lambda/post-add-card"),
@@ -89,6 +95,18 @@ class FlashForge(core.Stack):
         delete_user_card_lambda = _lambda.DockerImageFunction(
             self, "DELETEUSERCARD",
             code=_lambda.DockerImageCode.from_image_asset("./lambda/delete-user-card"),
+            memory_size=256,
+            timeout=core.Duration.seconds(60),
+            **common_params)
+        post_add_user_lambda = _lambda.DockerImageFunction(
+            self, "POSTADDUSER",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/post-add-user"),
+            memory_size=256,
+            timeout=core.Duration.seconds(60),
+            **common_params)
+        get_user_name_lambda = _lambda.DockerImageFunction(
+            self, "GETUSERNAME",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/get-user-name"),
             memory_size=256,
             timeout=core.Duration.seconds(60),
             **common_params)
@@ -129,6 +147,27 @@ class FlashForge(core.Stack):
                 resources=["*"],
             )
         )
+        post_add_user_lambda.add_to_role_policy(
+            _iam.PolicyStatement(
+                effect=_iam.Effect.ALLOW,
+                actions=["*"],
+                resources=["*"],
+            )
+        )
+        get_user_name_lambda.add_to_role_policy(
+            _iam.PolicyStatement(
+                effect=_iam.Effect.ALLOW,
+                actions=["*"],
+                resources=["*"],
+            )
+        )
+        get_en2jp_sentence_lambda.add_to_role_policy(
+            _iam.PolicyStatement(
+                effect=_iam.Effect.ALLOW,
+                actions=["*"],
+                resources=["*"],
+            )
+        )
 
 
         # Grant table permissions to lambda functions to card table
@@ -137,11 +176,15 @@ class FlashForge(core.Stack):
         ff_card_table.grant_read_write_data(post_add_card_lambda)
         ff_card_table.grant_read_write_data(get_user_cards_lambda)
         ff_card_table.grant_read_write_data(delete_user_card_lambda)
+        ff_card_table.grant_read_write_data(post_add_user_lambda)
+        ff_card_table.grant_read_write_data(get_user_name_lambda)
 
         # Grant table permissions to lambda functions to user table
         ff_user_table.grant_read_write_data(post_add_card_lambda)
         ff_user_table.grant_read_write_data(get_user_cards_lambda)
         ff_user_table.grant_read_write_data(delete_user_card_lambda)
+        ff_user_table.grant_read_write_data(post_add_user_lambda)
+        ff_user_table.grant_read_write_data(get_user_name_lambda)
 
         # Grant bucket permissions to lambda functions
         bucket.grant_read_write(get_jp2en_lambda)
@@ -149,6 +192,8 @@ class FlashForge(core.Stack):
         bucket.grant_read_write(post_add_card_lambda)
         bucket.grant_read_write(get_user_cards_lambda)
         bucket.grant_read_write(delete_user_card_lambda)
+        bucket.grant_read_write(post_add_user_lambda)
+        bucket.grant_read_write(get_user_name_lambda)
 
         # define API Gateway
         api = apigw.RestApi(
@@ -168,11 +213,24 @@ class FlashForge(core.Stack):
             "GET",
             apigw.LambdaIntegration(get_user_cards_lambda)
         )
+        # get user name
+        get_user_name = user_api.add_resource("get_user_name")
+        get_user_name.add_method(
+            "GET",
+            apigw.LambdaIntegration(get_user_name_lambda)
+        )
         # delete user card
         delete_user_card_api = user_api.add_resource("{card_id}")
         delete_user_card_api.add_method(
             "DELETE",
             apigw.LambdaIntegration(delete_user_card_lambda)
+        )
+        # add user
+        add_user_api = user_api.add_resource("user_name")
+        add_user_name_api = add_user_api.add_resource("{user_name}")
+        add_user_name_api.add_method(
+            "POST",
+            apigw.LambdaIntegration(post_add_user_lambda)
         )
         # add card
         add_card = user_api.add_resource("add_card")
@@ -194,6 +252,16 @@ class FlashForge(core.Stack):
         en2jp_prompt_api.add_method(
             "GET",
             apigw.LambdaIntegration(get_en2jp_lambda)
+        )
+        # get en2jp sentence
+        en2jp_sentence = user_api.add_resource("en2jp_sentence")
+        en2jp_sentence_diff = en2jp_sentence.add_resource("difficulty")
+        en2jp_sentence_diff_api = en2jp_sentence_diff.add_resource("{difficulty}")
+        en2jp_sentence_context = en2jp_sentence_diff_api.add_resource("context")
+        en2jp_sentence_context_api = en2jp_sentence_context.add_resource("{context}")
+        en2jp_sentence_context_api.add_method(
+            "GET",
+            apigw.LambdaIntegration(get_en2jp_sentence_lambda)
         )
 
         # store parameters in SSM

@@ -4,3 +4,4 @@
 cdk.out/*
 trash/*
 *.secret
+test.ipynb
