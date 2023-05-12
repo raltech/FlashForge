@@ -74,6 +74,12 @@ class FlashForge(core.Stack):
             memory_size=256,
             timeout=core.Duration.seconds(60),
             **common_params)
+        get_en2jp_word_comment_lambda = _lambda.DockerImageFunction(
+            self, "GET-EN2JP-WORD-COMMENT",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/en2jp/get-en2jp-word-comment"),
+            memory_size=256,
+            timeout=core.Duration.seconds(60),
+            **common_params)
         get_en2jp_sentence_lambda = _lambda.DockerImageFunction(
             self, "GET-EN2JP-SENTENCE",
             code=_lambda.DockerImageCode.from_image_asset("./lambda/en2jp/get-en2jp-sentence"),
@@ -232,6 +238,12 @@ class FlashForge(core.Stack):
         en2jp_word_sentence_api.add_method(
             "GET",
             apigw.LambdaIntegration(get_en2jp_word_sentence_lambda)
+        )
+        # comment completion
+        en2jp_word_comment_api = en2jp_word_api.add_resource("comment")
+        en2jp_word_comment_api.add_method(
+            "GET",
+            apigw.LambdaIntegration(get_en2jp_word_comment_lambda)
         )
         # generate en2jp sentences
         en2jp_sentence = en2jp.add_resource("sentence")

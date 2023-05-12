@@ -1,0 +1,7 @@
+Generate comments in English and Japanese that help users understand a given word better. 
+The comments may include 
+- Phrases :  Famouse phrases used with input.en.words[0].
+- Preposition : Prepositions often used with input.en.words[0].
+- Important information. 
+
+The Japanese comments are translations of the English ones, and there is only one English word given in the input. 
