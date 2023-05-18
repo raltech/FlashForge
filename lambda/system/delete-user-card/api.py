@@ -9,7 +9,6 @@ import urllib.parse
 s3 = boto3.resource("s3")
 ddb = boto3.resource("dynamodb")
 bucket_name = os.environ["FF_BUCKET_NAME"]
-card_table_name = ddb.Table(os.environ["FF_CARD_TABLE_NAME"])
 user_table_name = ddb.Table(os.environ["FF_USER_TABLE_NAME"])
 
 # CORS (Cross-Origin Resource Sharing) headers to support cross-site HTTP requests
@@ -27,7 +26,7 @@ class DecimalEncoder(json.JSONEncoder):
 # API handlers
 def handler(event, context):
     """
-    API handler for DELETE /user/{user_id}/{card_id}
+    API handler for DELETE /user/{user_id}/lang_pair/{lang_pair}/{card_id}
     """
     
     try:
@@ -35,10 +34,12 @@ def handler(event, context):
         path_params = event.get("pathParameters", {})
         user_id = path_params.get("user_id", "")
         card_id = path_params.get("card_id", "")
+        pair = path_params.get("lang_pair", "")
 
         # decode url encoded parameters
         user_id = urllib.parse.unquote(user_id)
         card_id = urllib.parse.unquote(card_id)
+        pair = urllib.parse.unquote(pair)
 
         # validate parameters
         if not user_id:
@@ -54,6 +55,11 @@ def handler(event, context):
         )
         if "Item" not in response:
             raise ValueError(f"User '{user_id}' not found")
+        
+        if pair == "en2jp":
+            card_table_name = ddb.Table(os.environ["EN2JP_CARD_TABLE_NAME"])
+        else:
+            card_table_name = ddb.Table(os.environ["FF_CARD_TABLE_NAME"])
         
         # check if card exists
         response = card_table_name.get_item(

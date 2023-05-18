@@ -9,7 +9,6 @@ import urllib.parse
 s3 = boto3.resource("s3")
 ddb = boto3.resource("dynamodb")
 bucket_name = os.environ["FF_BUCKET_NAME"]
-card_table_name = ddb.Table(os.environ["FF_CARD_TABLE_NAME"])
 user_table_name = ddb.Table(os.environ["FF_USER_TABLE_NAME"])
 
 # CORS (Cross-Origin Resource Sharing) headers to support cross-site HTTP requests

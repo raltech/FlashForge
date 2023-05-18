@@ -9,7 +9,6 @@ import urllib.parse
 s3 = boto3.resource("s3")
 ddb = boto3.resource("dynamodb")
 bucket_name = os.environ["FF_BUCKET_NAME"]
-card_table_name = ddb.Table(os.environ["FF_CARD_TABLE_NAME"])
 user_table_name = ddb.Table(os.environ["FF_USER_TABLE_NAME"])
 
 # CORS (Cross-Origin Resource Sharing) headers to support cross-site HTTP requests
@@ -27,21 +26,28 @@ class DecimalEncoder(json.JSONEncoder):
 # API handlers
 def handler(event, context):
     """
-    API handler for GET /user/{user_id}/get_user_cards
+    API handler for GET /user/{user_id}/lang_pair/{lang_pair}/get_user_cards
     """
     
     try:
         # get path parameters
         path_params = event.get("pathParameters", {})
         user_id = path_params.get("user_id", "")
+        pair = path_params.get("pair", "")
 
         # decode url encoded parameters
         user_id = urllib.parse.unquote(user_id)
+        pair = urllib.parse.unquote(pair)
 
         # validate parameters
         if not user_id:
             raise ValueError("Invalid request. The path parameter 'user_id' is missing")
         
+        if pair == "en2jp":
+            card_table_name = ddb.Table(os.environ["EN2JP_CARD_TABLE_NAME"])
+        else:
+            card_table_name = ddb.Table(os.environ["FF_CARD_TABLE_NAME"])
+
         # get item from dynamodb
         response = card_table_name.query(
             KeyConditionExpression=Key("user_id").eq(user_id)

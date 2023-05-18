@@ -34,6 +34,20 @@ class FlashForge(core.Stack):
             removal_policy = core.RemovalPolicy.DESTROY
         )
 
+        en2jp_card_table = ddb.Table(
+            self, "EN2JP_Card_Table",
+            partition_key = ddb.Attribute(
+                name="user_id",
+                type=ddb.AttributeType.STRING
+            ),
+            sort_key = ddb.Attribute(
+                name="card_id",
+                type=ddb.AttributeType.STRING
+            ),
+            billing_mode = ddb.BillingMode.PAY_PER_REQUEST,
+            removal_policy = core.RemovalPolicy.RETAIN
+        )
+
         # define dynamoDB for storing user data
         ff_user_table = ddb.Table(
             self, "FF_User_Table",
@@ -42,7 +56,7 @@ class FlashForge(core.Stack):
                 type=ddb.AttributeType.STRING
             ),
             billing_mode = ddb.BillingMode.PAY_PER_REQUEST,
-            removal_policy = core.RemovalPolicy.DESTROY
+            removal_policy = core.RemovalPolicy.RETAIN
         )
 
         # define s3 bucket for temporary storage (store reward distribution)
@@ -56,6 +70,7 @@ class FlashForge(core.Stack):
             # "runtime": _lambda.Runtime.PYTHON_3_8,
             "environment": {
                 "FF_CARD_TABLE_NAME": ff_card_table.table_name,
+                "EN2JP_CARD_TABLE_NAME": en2jp_card_table.table_name,
                 "FF_USER_TABLE_NAME": ff_user_table.table_name,
                 "FF_BUCKET_NAME": bucket.bucket_name,
             }
@@ -160,8 +175,10 @@ class FlashForge(core.Stack):
         ff_card_table.grant_read_write_data(post_add_card_lambda)
         ff_card_table.grant_read_write_data(get_user_cards_lambda)
         ff_card_table.grant_read_write_data(delete_user_card_lambda)
-        ff_card_table.grant_read_write_data(post_add_user_lambda)
-        ff_card_table.grant_read_write_data(get_user_name_lambda)
+        # Grant table permissions to lambda functions to en2jp card table
+        en2jp_card_table.grant_read_write_data(post_add_card_lambda)
+        en2jp_card_table.grant_read_write_data(get_user_cards_lambda)
+        en2jp_card_table.grant_read_write_data(delete_user_card_lambda)
 
         # Grant table permissions to lambda functions to user table
         ff_user_table.grant_read_write_data(post_add_card_lambda)
@@ -169,13 +186,18 @@ class FlashForge(core.Stack):
         ff_user_table.grant_read_write_data(delete_user_card_lambda)
         ff_user_table.grant_read_write_data(post_add_user_lambda)
         ff_user_table.grant_read_write_data(get_user_name_lambda)
+        # en2jp
+        ff_user_table.grant_read_write_data(get_en2jp_word_lambda)
+        ff_user_table.grant_read_write_data(get_en2jp_word_sentence_lambda)
+        ff_user_table.grant_read_write_data(get_en2jp_word_comment_lambda)
+        ff_user_table.grant_read_write_data(get_en2jp_sentence_lambda)
 
         # Grant bucket permissions to lambda functions
-        bucket.grant_read_write(post_add_card_lambda)
-        bucket.grant_read_write(get_user_cards_lambda)
-        bucket.grant_read_write(delete_user_card_lambda)
-        bucket.grant_read_write(post_add_user_lambda)
-        bucket.grant_read_write(get_user_name_lambda)
+        # bucket.grant_read_write(post_add_card_lambda)
+        # bucket.grant_read_write(get_user_cards_lambda)
+        # bucket.grant_read_write(delete_user_card_lambda)
+        # bucket.grant_read_write(post_add_user_lambda)
+        # bucket.grant_read_write(get_user_name_lambda)
 
         # define API Gateway
         api = apigw.RestApi(
@@ -190,7 +212,11 @@ class FlashForge(core.Stack):
         user = api.root.add_resource("user")
         user_api = user.add_resource("{user_id}")
         # get user cards
-        get_user_cards = user_api.add_resource("get_user_cards")
+        base_lang = user_api.add_resource("base_lang")
+        base_lang_api = base_lang.add_resource("{base_lang}")
+        target_lang = base_lang_api.add_resource("target_lang")
+        lang_pair_api = target_lang.add_resource("{target_lang}")
+        get_user_cards = lang_pair_api.add_resource("get_user_cards")
         get_user_cards.add_method(
             "GET",
             apigw.LambdaIntegration(get_user_cards_lambda)
@@ -202,7 +228,7 @@ class FlashForge(core.Stack):
             apigw.LambdaIntegration(get_user_name_lambda)
         )
         # delete user card
-        delete_user_card_api = user_api.add_resource("{card_id}")
+        delete_user_card_api = lang_pair_api.add_resource("{card_id}")
         delete_user_card_api.add_method(
             "DELETE",
             apigw.LambdaIntegration(delete_user_card_lambda)
@@ -215,7 +241,7 @@ class FlashForge(core.Stack):
             apigw.LambdaIntegration(post_add_user_lambda)
         )
         # add card
-        add_card = user_api.add_resource("add_card")
+        add_card = lang_pair_api.add_resource("add_card")
         add_card_api = add_card.add_resource("{card_id}")
         add_card_detail_api = add_card_api.add_resource("{card_detail}")
         add_card_detail_api.add_method(

@@ -3,6 +3,7 @@ import openai
 import urllib.parse
 import time
 import ast
+import boto3
 
 # load openai api key from .secret
 with open(".secret", "r") as f:
@@ -12,6 +13,10 @@ with open(".secret", "r") as f:
 openai.api_key = api_key
 os.environ["OPENAI_API_KEY"] = api_key
 os.environ["TRANSFORMERS_CACHE"] = "/tmp"
+
+# initialize boto3 resources
+ddb = boto3.resource("dynamodb")
+user_table_name = ddb.Table(os.environ["FF_USER_TABLE_NAME"])
 
 # CORS (Cross-Origin Resource Sharing) headers to support cross-site HTTP requests
 HEADERS = {
@@ -42,6 +47,15 @@ def handler(event, context):
         if not word:
             raise ValueError("Invalid request. The path parameter 'word' is missing")
         print("1: time elapsed: ", time.time() - start)
+
+        # check if user exists
+        response = user_table_name.get_item(
+            Key={
+                "user_id": user_id
+            }
+        )
+        if "Item" not in response:
+            raise ValueError(f"User '{user_id}' not found")
 
         start = time.time()
         # read text file

@@ -2,6 +2,7 @@ import json, os, uuid, decimal
 import openai
 import urllib.parse
 import ast
+import boto3
 
 # load openai api key from .secret
 with open(".secret", "r") as f:
@@ -11,6 +12,10 @@ with open(".secret", "r") as f:
 openai.api_key = api_key
 os.environ["OPENAI_API_KEY"] = api_key
 os.environ["TRANSFORMERS_CACHE"] = "/tmp"
+
+# initialize boto3 resources
+ddb = boto3.resource("dynamodb")
+user_table_name = ddb.Table(os.environ["FF_USER_TABLE_NAME"])
 
 # CORS (Cross-Origin Resource Sharing) headers to support cross-site HTTP requests
 HEADERS = {
@@ -34,9 +39,20 @@ def handler(event, context):
         path_params = event.get("pathParameters", {})
         difficulty = path_params.get("difficulty", "")
         context = path_params.get("context", "")
+        user_id = path_params.get("user_id", "")
         difficulty = urllib.parse.unquote(difficulty)
         context = urllib.parse.unquote(context)
+        user_id = urllib.parse.unquote(user_id)
         print("difficulty: ", difficulty , "context: ", context)
+
+        # check if user exists
+        response = user_table_name.get_item(
+            Key={
+                "user_id": user_id
+            }
+        )
+        if "Item" not in response:
+            raise ValueError(f"User '{user_id}' not found")
 
         # read text file
         with open("prompt.txt", "r") as f:
@@ -44,7 +60,7 @@ def handler(event, context):
 
         completion = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            temperature=0.7,
+            temperature=0.8,
             messages=[
                     {"role": "system", "content": system_context},
                     {"role": "user", "content": '\ncontext:' + context + '\ndifficulty:' + difficulty + '\noutput:'}

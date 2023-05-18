@@ -3,6 +3,7 @@ import openai
 import urllib.parse
 import time
 import ast
+import boto3
 
 # load openai api key from .secret
 with open(".secret", "r") as f:
@@ -12,6 +13,10 @@ with open(".secret", "r") as f:
 openai.api_key = api_key
 os.environ["OPENAI_API_KEY"] = api_key
 os.environ["TRANSFORMERS_CACHE"] = "/tmp"
+
+# initialize boto3 resources
+ddb = boto3.resource("dynamodb")
+user_table_name = ddb.Table(os.environ["FF_USER_TABLE_NAME"])
 
 # CORS (Cross-Origin Resource Sharing) headers to support cross-site HTTP requests
 HEADERS = {
@@ -43,6 +48,15 @@ def handler(event, context):
             raise ValueError("Invalid request. The path parameter 'word' is missing")
         print("1: time elapsed: ", time.time() - start)
 
+        # check if user exists
+        response = user_table_name.get_item(
+            Key={
+                "user_id": user_id
+            }
+        )
+        if "Item" not in response:
+            raise ValueError(f"User '{user_id}' not found")
+
         start = time.time()
         # read text file
         with open("prompt.txt", "r") as f:
@@ -55,7 +69,7 @@ def handler(event, context):
             temperature=0.0,
             messages=[
                     {"role": "system", "content": system_context},
-                    {"role": "user", "content": str([["rise to one's feet"],"立ち上がる"])},
+                    {"role": "user", "content": str([["rise to one's feet"],["立ち上がる"]])},
                     {"role": "assistant", "content": str([["After feeling defeated, she mentally rose to her feet and regained her confidence.","敗北感を感じた後、彼女は精神的に立ち上がり、自信を取り戻した。"],["She quickly rose to her feet when the teacher entered the room.","先生が部屋に入ったとき、彼女はすぐに立ち上がりました。"]])},
                     {"role": "user", "content": str([["corroborate"], ["裏付ける", "確証する"]])},
                     {"role": "assistant", "content": str([["The witness's testimony helped corroborate the defendant's alibi.","証人の証言が被告人のアリバイを裏付けるのに役立った。"],["The evidence found at the scene corroborates the victim's story.","現場で見つかった証拠が、被害者の話を確証する。"]])},
@@ -78,7 +92,6 @@ def handler(event, context):
         # convert output to json
         print("raw output: ", output)
         output = ast.literal_eval(output)
-        # output = json.loads(output)
         print("literal_eval output: ", output)
 
         # if json contains "error", raise ValueError
@@ -103,4 +116,4 @@ def handler(event, context):
         "body": json.dumps(resp, cls=DecimalEncoder)
     }
 
-# http GET "${ENDPOINT_URL}/user/114514/en2jp/word/'[[\"behave\"],[\"ふるまう\"]]'/sentence"
+# http GET "${ENDPOINT_URL}/user/114514/en2jp/word/[[\"behave\"], [\"振る舞う\", \"行動する\"]]/sentence"

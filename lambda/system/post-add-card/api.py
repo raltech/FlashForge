@@ -9,7 +9,6 @@ import urllib.parse
 s3 = boto3.resource("s3")
 ddb = boto3.resource("dynamodb")
 bucket_name = os.environ["FF_BUCKET_NAME"]
-card_table_name = ddb.Table(os.environ["FF_CARD_TABLE_NAME"])
 user_table_name = ddb.Table(os.environ["FF_USER_TABLE_NAME"])
 
 # CORS (Cross-Origin Resource Sharing) headers to support cross-site HTTP requests
@@ -27,7 +26,7 @@ class DecimalEncoder(json.JSONEncoder):
 # API handlers
 def handler(event, context):
     """
-    API handler for POST /user/{user_id}/add_card/{card_id}/{card_detail}
+    API handler for POST /user/{user_id}/lang_pair/{lang_pair}/add_card/{card_id}/{card_detail}
     """
     
     try:
@@ -36,11 +35,13 @@ def handler(event, context):
         user_id = path_params.get("user_id", "")
         card_id = path_params.get("card_id", "")
         card_detail = path_params.get("card_detail", "")
+        pair = path_params.get("lang_pair", "")
 
         # decode url encoded parameters
         user_id = urllib.parse.unquote(user_id)
         card_id = urllib.parse.unquote(card_id)
         card_detail = urllib.parse.unquote(card_detail)
+        pair = urllib.parse.unquote(pair)
 
         # convert card_detail to json
         card_detail = json.loads(card_detail)
@@ -64,6 +65,11 @@ def handler(event, context):
         else:
             # get user card_order
             card_order = response["Item"]["card_order"]
+
+        if pair == "en2jp":
+            card_table_name = ddb.Table(os.environ["EN2JP_CARD_TABLE_NAME"])
+        else:
+            card_table_name = ddb.Table(os.environ["FF_CARD_TABLE_NAME"])
         
         # check if card already exists
         response = card_table_name.get_item(
