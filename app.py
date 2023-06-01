@@ -20,10 +20,10 @@ class FlashForge(core.Stack):
         super().__init__(scope, name, **kwargs)
 
         # define dynamoDB for storing card data
-        ff_card_table = ddb.Table(
-            self, "FF_Card_Table",
+        en2jp_card_table = ddb.Table(
+            self, "EN2JP_Card_Table",
             partition_key = ddb.Attribute(
-                name="user_id", 
+                name="user_id",
                 type=ddb.AttributeType.STRING
             ),
             sort_key = ddb.Attribute(
@@ -31,11 +31,10 @@ class FlashForge(core.Stack):
                 type=ddb.AttributeType.STRING
             ),
             billing_mode = ddb.BillingMode.PAY_PER_REQUEST,
-            removal_policy = core.RemovalPolicy.DESTROY
+            removal_policy = core.RemovalPolicy.RETAIN
         )
-
-        en2jp_card_table = ddb.Table(
-            self, "EN2JP_Card_Table",
+        de2en_card_table = ddb.Table(
+            self, "DE2EN_Card_Table",
             partition_key = ddb.Attribute(
                 name="user_id",
                 type=ddb.AttributeType.STRING
@@ -69,43 +68,69 @@ class FlashForge(core.Stack):
         common_params = {
             # "runtime": _lambda.Runtime.PYTHON_3_8,
             "environment": {
-                "FF_CARD_TABLE_NAME": ff_card_table.table_name,
                 "EN2JP_CARD_TABLE_NAME": en2jp_card_table.table_name,
+                "DE2EN_CARD_TABLE_NAME": de2en_card_table.table_name,
                 "FF_USER_TABLE_NAME": ff_user_table.table_name,
                 "FF_BUCKET_NAME": bucket.bucket_name,
             }
         }
 
         # define lambda functions for en2jp (base is jp, target is en)
-        get_en2jp_word_lambda = _lambda.DockerImageFunction(
-            self, "GET-EN2JP-WORD",
-            code=_lambda.DockerImageCode.from_image_asset("./lambda/en2jp/get-en2jp-word"),
+        get_en2jp_card_word_lambda = _lambda.DockerImageFunction(
+            self, "GET-EN2JP-CARD-WORD",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/en2jp/get-en2jp-card-word"),
             memory_size=256,
             timeout=core.Duration.seconds(60),
             **common_params) 
-        get_en2jp_word_sentence_lambda = _lambda.DockerImageFunction(
-            self, "GET-EN2JP-WORD-SENTENCE",
-            code=_lambda.DockerImageCode.from_image_asset("./lambda/en2jp/get-en2jp-word-sentence"),
+        get_en2jp_card_sentence_lambda = _lambda.DockerImageFunction(
+            self, "GET-EN2JP-CARD-SENTENCE",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/en2jp/get-en2jp-card-sentence"),
             memory_size=256,
             timeout=core.Duration.seconds(60),
             **common_params)
-        get_en2jp_word_comment_lambda = _lambda.DockerImageFunction(
-            self, "GET-EN2JP-WORD-COMMENT",
-            code=_lambda.DockerImageCode.from_image_asset("./lambda/en2jp/get-en2jp-word-comment"),
+        get_en2jp_card_comment_lambda = _lambda.DockerImageFunction(
+            self, "GET-EN2JP-CARD-COMMENT",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/en2jp/get-en2jp-card-comment"),
             memory_size=256,
             timeout=core.Duration.seconds(60),
             **common_params)
-        get_en2jp_sentence_lambda = _lambda.DockerImageFunction(
-            self, "GET-EN2JP-SENTENCE",
-            code=_lambda.DockerImageCode.from_image_asset("./lambda/en2jp/get-en2jp-sentence"),
+        get_en2jp_story_lambda = _lambda.DockerImageFunction(
+            self, "GET-EN2JP-STORY",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/en2jp/get-en2jp-story"),
+            memory_size=256,
+            timeout=core.Duration.seconds(60),
+            **common_params)
+        
+        # define lambda functions for de2en (base is en, target is de)
+        get_de2en_card_word_lambda = _lambda.DockerImageFunction(
+            self, "GET-DE2EN-CARD-WORD",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/de2en/get-de2en-card-word"),
+            memory_size=256,
+            timeout=core.Duration.seconds(60),
+            **common_params) 
+        get_de2en_card_sentence_lambda = _lambda.DockerImageFunction(
+            self, "GET-DE2EN-CARD-SENTENCE",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/de2en/get-de2en-card-sentence"),
+            memory_size=256,
+            timeout=core.Duration.seconds(60),
+            **common_params)
+        get_de2en_card_comment_lambda = _lambda.DockerImageFunction(
+            self, "GET-DE2EN-CARD-COMMENT",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/de2en/get-de2en-card-comment"),
+            memory_size=256,
+            timeout=core.Duration.seconds(60),
+            **common_params)
+        get_de2en_story_lambda = _lambda.DockerImageFunction(
+            self, "GET-DE2EN-STORY",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/de2en/get-de2en-story"),
             memory_size=256,
             timeout=core.Duration.seconds(60),
             **common_params)
         
         # define lambda functions for system
-        post_add_card_lambda = _lambda.DockerImageFunction(
-            self, "POST-ADD-CARD",
-            code=_lambda.DockerImageCode.from_image_asset("./lambda/system/post-add-card"),
+        post_card_lambda = _lambda.DockerImageFunction(
+            self, "POST-CARD",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/system/post-card"),
             memory_size=256,
             timeout=core.Duration.seconds(60),
             **common_params)
@@ -115,15 +140,15 @@ class FlashForge(core.Stack):
             memory_size=256,
             timeout=core.Duration.seconds(60),
             **common_params)
-        delete_user_card_lambda = _lambda.DockerImageFunction(
+        delete_card_lambda = _lambda.DockerImageFunction(
             self, "DELETE-USER-CARD",
-            code=_lambda.DockerImageCode.from_image_asset("./lambda/system/delete-user-card"),
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/system/delete-card"),
             memory_size=256,
             timeout=core.Duration.seconds(60),
             **common_params)
-        post_add_user_lambda = _lambda.DockerImageFunction(
-            self, "POST-ADD-USER",
-            code=_lambda.DockerImageCode.from_image_asset("./lambda/system/post-add-user"),
+        post_user_lambda = _lambda.DockerImageFunction(
+            self, "POST-USER",
+            code=_lambda.DockerImageCode.from_image_asset("./lambda/system/post-user"),
             memory_size=256,
             timeout=core.Duration.seconds(60),
             **common_params)
@@ -135,7 +160,7 @@ class FlashForge(core.Stack):
             **common_params)
 
         # grant permission to lambda functions to access dynamoDB
-        post_add_card_lambda.add_to_role_policy(
+        post_card_lambda.add_to_role_policy(
             _iam.PolicyStatement(
                 effect=_iam.Effect.ALLOW,
                 actions=["*"],
@@ -149,14 +174,14 @@ class FlashForge(core.Stack):
                 resources=["*"],
             )
         )
-        delete_user_card_lambda.add_to_role_policy(
+        delete_card_lambda.add_to_role_policy(
             _iam.PolicyStatement(
                 effect=_iam.Effect.ALLOW,
                 actions=["*"],
                 resources=["*"],
             )
         )
-        post_add_user_lambda.add_to_role_policy(
+        post_user_lambda.add_to_role_policy(
             _iam.PolicyStatement(
                 effect=_iam.Effect.ALLOW,
                 actions=["*"],
@@ -171,32 +196,38 @@ class FlashForge(core.Stack):
             )
         )
 
-        # Grant table permissions to lambda functions to card table
-        ff_card_table.grant_read_write_data(post_add_card_lambda)
-        ff_card_table.grant_read_write_data(get_user_cards_lambda)
-        ff_card_table.grant_read_write_data(delete_user_card_lambda)
-        # Grant table permissions to lambda functions to en2jp card table
-        en2jp_card_table.grant_read_write_data(post_add_card_lambda)
+        # Grant table permissions to lambda functions
+        # en2jp
+        en2jp_card_table.grant_read_write_data(post_card_lambda)
         en2jp_card_table.grant_read_write_data(get_user_cards_lambda)
-        en2jp_card_table.grant_read_write_data(delete_user_card_lambda)
+        en2jp_card_table.grant_read_write_data(delete_card_lambda)
+        # de2en
+        de2en_card_table.grant_read_write_data(post_card_lambda)
+        de2en_card_table.grant_read_write_data(get_user_cards_lambda)
+        de2en_card_table.grant_read_write_data(delete_card_lambda)
 
         # Grant table permissions to lambda functions to user table
-        ff_user_table.grant_read_write_data(post_add_card_lambda)
+        ff_user_table.grant_read_write_data(post_card_lambda)
         ff_user_table.grant_read_write_data(get_user_cards_lambda)
-        ff_user_table.grant_read_write_data(delete_user_card_lambda)
-        ff_user_table.grant_read_write_data(post_add_user_lambda)
+        ff_user_table.grant_read_write_data(delete_card_lambda)
+        ff_user_table.grant_read_write_data(post_user_lambda)
         ff_user_table.grant_read_write_data(get_user_name_lambda)
         # en2jp
-        ff_user_table.grant_read_write_data(get_en2jp_word_lambda)
-        ff_user_table.grant_read_write_data(get_en2jp_word_sentence_lambda)
-        ff_user_table.grant_read_write_data(get_en2jp_word_comment_lambda)
-        ff_user_table.grant_read_write_data(get_en2jp_sentence_lambda)
+        ff_user_table.grant_read_write_data(get_en2jp_card_word_lambda)
+        ff_user_table.grant_read_write_data(get_en2jp_card_sentence_lambda)
+        ff_user_table.grant_read_write_data(get_en2jp_card_comment_lambda)
+        ff_user_table.grant_read_write_data(get_en2jp_story_lambda)
+        # de2en
+        ff_user_table.grant_read_write_data(get_de2en_card_word_lambda)
+        ff_user_table.grant_read_write_data(get_de2en_card_sentence_lambda)
+        ff_user_table.grant_read_write_data(get_de2en_card_comment_lambda)
+        ff_user_table.grant_read_write_data(get_de2en_story_lambda)
 
         # Grant bucket permissions to lambda functions
-        # bucket.grant_read_write(post_add_card_lambda)
+        # bucket.grant_read_write(post_card_lambda)
         # bucket.grant_read_write(get_user_cards_lambda)
-        # bucket.grant_read_write(delete_user_card_lambda)
-        # bucket.grant_read_write(post_add_user_lambda)
+        # bucket.grant_read_write(delete_card_lambda)
+        # bucket.grant_read_write(post_user_lambda)
         # bucket.grant_read_write(get_user_name_lambda)
 
         # define API Gateway
@@ -208,86 +239,79 @@ class FlashForge(core.Stack):
             )
         )
 
-        # Link API calls to lambda functions
-        user = api.root.add_resource("user")
-        user_api = user.add_resource("{user_id}")
-        # get user cards
-        base_lang = user_api.add_resource("base_lang")
-        base_lang_api = base_lang.add_resource("{base_lang}")
-        target_lang = base_lang_api.add_resource("target_lang")
-        lang_pair_api = target_lang.add_resource("{target_lang}")
-        get_user_cards = lang_pair_api.add_resource("get_user_cards")
-        get_user_cards.add_method(
-            "GET",
-            apigw.LambdaIntegration(get_user_cards_lambda)
-        )
+        # Set up API Gateway for lambda functions
+        user = api.root.add_resource("{user_id}")
+
+        # post user
+        post_user = user.add_resource("post_user")
+        post_user_name = post_user.add_resource("{user_name}")
+        post_user_name.add_method("POST", apigw.LambdaIntegration(post_user_lambda))
+        # user.add_resource("post_user").add_resource("{user_name}").add_method("POST", apigw.LambdaIntegration(post_user_lambda))
+
         # get user name
-        get_user_name = user_api.add_resource("get_user_name")
-        get_user_name.add_method(
-            "GET",
-            apigw.LambdaIntegration(get_user_name_lambda)
-        )
-        # delete user card
-        delete_user_card_api = lang_pair_api.add_resource("{card_id}")
-        delete_user_card_api.add_method(
-            "DELETE",
-            apigw.LambdaIntegration(delete_user_card_lambda)
-        )
-        # add user
-        add_user_api = user_api.add_resource("user_name")
-        add_user_name_api = add_user_api.add_resource("{user_name}")
-        add_user_name_api.add_method(
-            "POST",
-            apigw.LambdaIntegration(post_add_user_lambda)
-        )
-        # add card
-        add_card = lang_pair_api.add_resource("add_card")
-        add_card_api = add_card.add_resource("{card_id}")
-        add_card_detail_api = add_card_api.add_resource("{card_detail}")
-        add_card_detail_api.add_method(
-            "POST",
-            apigw.LambdaIntegration(post_add_card_lambda)
-        )
+        get_user_name = user.add_resource("get_user_name")
+        get_user_name.add_method("GET", apigw.LambdaIntegration(get_user_name_lambda))
 
-        """Base Japanese -> Target English"""
-        # word completion
-        en2jp = user_api.add_resource("en2jp")
+        # get user cards
+        get_user_cards = user.add_resource("get_user_cards")
+        # get_user_cards_base_lang = get_user_cards.add_resource("base_lang")
+        get_user_cards_base_lang = get_user_cards.add_resource("{base_lang}")
+        # get_user_cards_target_lang = get_user_cards_base_lang.add_resource("target_lang")
+        get_user_cards_target_lang = get_user_cards_base_lang.add_resource("{target_lang}")
+        get_user_cards_target_lang.add_method("GET", apigw.LambdaIntegration(get_user_cards_lambda))
 
-        en2jp_word = en2jp.add_resource("word")
-        en2jp_word_api = en2jp_word.add_resource("{word}")
-        en2jp_word_api.add_method(
-            "GET",
-            apigw.LambdaIntegration(get_en2jp_word_lambda)
-        )
-        # sentence completion
-        en2jp_word_sentence_api = en2jp_word_api.add_resource("sentence")
-        en2jp_word_sentence_api.add_method(
-            "GET",
-            apigw.LambdaIntegration(get_en2jp_word_sentence_lambda)
-        )
-        # comment completion
-        en2jp_word_comment_api = en2jp_word_api.add_resource("comment")
-        en2jp_word_comment_api.add_method(
-            "GET",
-            apigw.LambdaIntegration(get_en2jp_word_comment_lambda)
-        )
-        # generate en2jp sentences
-        en2jp_sentence = en2jp.add_resource("sentence")
-        en2jp_sentence_diff = en2jp_sentence.add_resource("difficulty")
-        en2jp_sentence_diff_api = en2jp_sentence_diff.add_resource("{difficulty}")
-        en2jp_sentence_context = en2jp_sentence_diff_api.add_resource("context")
-        en2jp_sentence_context_api = en2jp_sentence_context.add_resource("{context}")
-        en2jp_sentence_context_api.add_method(
-            "GET",
-            apigw.LambdaIntegration(get_en2jp_sentence_lambda)
-        )
+        # post card
+        post_card = user.add_resource("post_card")
+        post_card_base_lang = post_card.add_resource("{base_lang}")
+        post_card_target_lang = post_card_base_lang.add_resource("{target_lang}")
+        post_card_id = post_card_target_lang.add_resource("{card_id}")
+        post_card_detail = post_card_id.add_resource("{card_detail}")
+        post_card_detail.add_method("POST", apigw.LambdaIntegration(post_card_lambda))
+
+        # delete card
+        delete_card = user.add_resource("delete_card")
+        delete_card_base_lang = delete_card.add_resource("{base_lang}")
+        delete_card_target_lang = delete_card_base_lang.add_resource("{target_lang}")
+        delete_card_id = delete_card_target_lang.add_resource("{card_id}")
+        delete_card_id.add_method("DELETE", apigw.LambdaIntegration(delete_card_lambda))
+
+        ## en2jp
+        # get en2jp card word
+        en2jp = user.add_resource("en2jp")
+        en2jp_card = en2jp.add_resource("card")
+        en2jp_card_word = en2jp_card.add_resource("{word}")
+        en2jp_card_word.add_method("GET", apigw.LambdaIntegration(get_en2jp_card_word_lambda))
+        # get en2jp card sentence
+        en2jp_card_sentence = en2jp_card_word.add_resource("sentence")
+        en2jp_card_sentence.add_method("GET", apigw.LambdaIntegration(get_en2jp_card_sentence_lambda))
+        # get en2jp card comment
+        en2jp_card_comment = en2jp_card_word.add_resource("comment")
+        en2jp_card_comment.add_method("GET", apigw.LambdaIntegration(get_en2jp_card_comment_lambda))
+        # get en2jp story
+        en2jp_story = en2jp.add_resource("story")
+        en2jp_story_context = en2jp_story.add_resource("{word_diff}").add_resource("{content_diff}")\
+                                 .add_resource("{grammar_diff}").add_resource("{story_context}")
+        en2jp_story_context.add_method("GET", apigw.LambdaIntegration(get_en2jp_story_lambda))
+
+        ## de2en
+        # get de2en card word
+        de2en = user.add_resource("de2en")
+        de2en_card = de2en.add_resource("card")
+        de2en_card_word = de2en_card.add_resource("{word}")
+        de2en_card_word.add_method("GET", apigw.LambdaIntegration(get_de2en_card_word_lambda))
+        # get de2en card sentence
+        de2en_card_sentence = de2en_card_word.add_resource("sentence")
+        de2en_card_sentence.add_method("GET", apigw.LambdaIntegration(get_de2en_card_sentence_lambda))
+        # get de2en card comment
+        de2en_card_comment = de2en_card_word.add_resource("comment")
+        de2en_card_comment.add_method("GET", apigw.LambdaIntegration(get_de2en_card_comment_lambda))
+        # get de2en story
+        de2en_story = de2en.add_resource("story")
+        de2en_story_context = de2en_story.add_resource("{word_diff}").add_resource("{content_diff}")\
+                                 .add_resource("{grammar_diff}").add_resource("{story_context}")
+        de2en_story_context.add_method("GET", apigw.LambdaIntegration(get_de2en_story_lambda))
 
         # store parameters in SSM
-        ssm.StringParameter(
-            self, "FF_CARD_TABLE_NAME",
-            parameter_name="FF_CARD_TABLE_NAME",
-            string_value=ff_card_table.table_name
-        )
         ssm.StringParameter(
             self, "FF_USER_TABLE_NAME",
             parameter_name="FF_USER_TABLE_NAME",

@@ -1,0 +1,31 @@
+Generate an English and Japanese sentence based on the context input given below. Output should be in list style.
+
+word difficulty: C1 (CEFR scale)
+content difficulty: C1 (CEFR scale)
+grammar difficulty: C2 (CEFR scale)
+story context: Nature, Plants, Animals
+["Despite the initial turmoil caused by the unforeseen deluge, the ecosystem gradually began to flourish, imbued with a newfound vitality, as the migratory birds returned to their sanctuary in the verdant canopy.","予想外の豪雨によって最初に引き起こされた混乱にもかかわらず、エコシステムは徐々に繁栄を始め、新たな活力に満ち溢れて、渡り鳥たちが緑豊かな樹冠の聖域へと戻ってきました。"]
+
+word difficulty: B1 (CEFR scale)
+content difficulty: B1 (CEFR scale)
+grammar difficulty: B1 (CEFR scale)
+story context: Sci-Fi, School
+["During her advanced physics class at the interstellar academy, Jenny was intrigued by the concept of time dilation in relation to faster-than-light travel.",  "星間アカデミーの高度な物理学のクラスで、ジェニーは光より速い旅行に関連した時間の膨張の概念に興味を持ちました。"]
+
+word difficulty: A2 (CEFR scale)
+content difficulty: A2 (CEFR scale)
+grammar difficulty: A2 (CEFR scale)
+story context: Love, Highschool, Comedy
+["Tom and Lisa, high school sweethearts, often shared jokes while eating their lunch together in the school cafeteria.","トムとリサ、高校の恋人たちは、学校のカフェテリアで一緒に昼食を食べながらよく冗談を言い合いました。"]
+
+word difficulty: A1 (CEFR scale)
+content difficulty: C2 (CEFR scale)
+grammar difficulty: B2 (CEFR scale)
+story context: Politics, History, Germany
+["After the wall fell, Germany changed in many complex ways.", "壁が崩れた後、ドイツは多くの複雑な方法で変化しました。"]
+
+word difficulty: B2 (CEFR scale)
+content difficulty: A2 (CEFR scale)
+grammar difficulty: C2 (CEFR scale)
+story context: Horror, Hospital
+["In the desolate and eerie corridors of the abandoned hospital, an uncanny sense of dread pervaded the air, seemingly devoid of any tangible source.", "放棄された病院の荒廃した不気味な廊下では、具体的な源を欠いた恐怖感が空気を支配し、異様な雰囲気を醸し出していました。"]

@@ -33,20 +33,25 @@ def handler(event, context):
         # get path parameters
         path_params = event.get("pathParameters", {})
         user_id = path_params.get("user_id", "")
-        pair = path_params.get("pair", "")
+        base_lang = path_params.get("base_lang", "")
+        target_lang = path_params.get("target_lang", "")
 
         # decode url encoded parameters
         user_id = urllib.parse.unquote(user_id)
-        pair = urllib.parse.unquote(pair)
+        base_lang = urllib.parse.unquote(base_lang)
+        target_lang = urllib.parse.unquote(target_lang)
 
         # validate parameters
         if not user_id:
             raise ValueError("Invalid request. The path parameter 'user_id' is missing")
         
-        if pair == "en2jp":
+        if base_lang == "jp" and target_lang == "en":
             card_table_name = ddb.Table(os.environ["EN2JP_CARD_TABLE_NAME"])
+        
+        elif base_lang == "en" and target_lang == "de":
+            card_table_name = ddb.Table(os.environ["DE2EN_CARD_TABLE_NAME"])
         else:
-            card_table_name = ddb.Table(os.environ["FF_CARD_TABLE_NAME"])
+            raise ValueError("Invalid request. The path parameter 'base_lang' or 'target_lang' is invalid")
 
         # get item from dynamodb
         response = card_table_name.query(

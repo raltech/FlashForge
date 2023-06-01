@@ -1,0 +1,1 @@
+Generate at least two example sentences for English and German using the given 'de' word. The English sentences should be direct translations of the German ones. Each sentence should highlight a different meaning or usage of the 'de' word.

@@ -33,7 +33,7 @@ class DecimalEncoder(json.JSONEncoder):
 # API handlers
 def handler(event, context):
     """
-    API handler for GET /user/{user_id}/en2jp/word/{word}
+    API handler for GET /user/{user_id}/en2jp/word/{word}/comment
     """
     
     try:
@@ -47,6 +47,7 @@ def handler(event, context):
         if not word:
             raise ValueError("Invalid request. The path parameter 'word' is missing")
         print("1: time elapsed: ", time.time() - start)
+
 
         # check if user exists
         response = user_table_name.get_item(
@@ -69,22 +70,12 @@ def handler(event, context):
             temperature=0.0,
             messages=[
                     {"role": "system", "content": system_context},
-                    {"role": "user", "content": "rise to one's feet"},
-                    {"role": "assistant", "content": '["立ち上がる"]'},
-                    {"role": "user", "content": "corroborate"},
-                    {"role": "assistant", "content": '["裏付ける","確証する"]'},
-                    {"role": "user", "content": "initialize"},
-                    {"role": "assistant", "content": '["初期化する","初期設定する"]'},
-                    {"role": "user", "content": "proof of concept"},
-                    {"role": "assistant", "content": '["概念実証"]'},
-                    {"role": "user", "content": "long to"},
-                    {"role": "assistant", "content": '["...したいと思う","...を望む"]'},
-                    {"role": "user", "content": "be in charge of"},
-                    {"role": "assistant", "content": '["...を担当している","...を管理している"]'},
-                    {"role": "user", "content": "bazinga"},
-                    {"role": "assistant", "content": '["バジンガ"]'},
-                    {"role": "user", "content": "jiszap"},
-                    {"role": "assistant", "content": '["ERROR: No translation found for jiszap"]'},
+                    {"role": "user", "content": str([["obsessed"],["取り憑かれた","夢中になった","執着する"]])},
+                    {"role": "assistant", "content": str([["Often used with the preposition 'with' to indicate the object of obsession (e.g., obsessed with a hobby, person, or idea)"],["しばしば、前置詞「with」と一緒に使用されます。"]])},
+                    {"role": "user", "content": str([["step"],["ステップ","一歩","足音"]])},
+                    {"role": "assistant", "content": str([["Often used in the phrase 'step up' or 'stepping stone'","Can be used to describe something that is a necessary but difficult or unpleasant part of a process (e.g., a stepping stone to success)"],["「Step up」や「 Stepping stone」というフレーズがしばしば使用されます。"]])},
+                    {"role": "user", "content": str([["personal"],["個人的な","個人の","パーソナルな"]])},
+                    {"role": "assistant", "content": str([["Often used to describe something that is related to a particular person or is specific to them (e.g., personal belongings, personal opinions), Can also be used in the phrase 'take it personally' to mean that someone is offended or upset by something that was not meant to be taken as a personal attack"],["ある特定の人に関連するものや、彼らに特有のものを表すのによく使われます。", "「take it personally」というフレーズにも使われ、個人的な攻撃として受け取るべきではないことに対して、人が攻撃されたと感じることを意味します。"]])},
                     {"role": "user", "content": word}
                 ]
             )
@@ -120,4 +111,4 @@ def handler(event, context):
         "body": json.dumps(resp, cls=DecimalEncoder)
     }
 
-# http GET "${ENDPOINT_URL}/user/114514/en2jp/word/behave"
+# http GET "${ENDPOINT_URL}/user/114514/en2jp/word/[[\"behave\"], [\"振る舞う\", \"行動する\"]]/comment"

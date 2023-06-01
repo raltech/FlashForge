@@ -35,13 +35,15 @@ def handler(event, context):
         user_id = path_params.get("user_id", "")
         card_id = path_params.get("card_id", "")
         card_detail = path_params.get("card_detail", "")
-        pair = path_params.get("lang_pair", "")
+        base_lang = path_params.get("base_lang", "")
+        target_lang = path_params.get("target_lang", "")
 
         # decode url encoded parameters
         user_id = urllib.parse.unquote(user_id)
         card_id = urllib.parse.unquote(card_id)
         card_detail = urllib.parse.unquote(card_detail)
-        pair = urllib.parse.unquote(pair)
+        base_lang = urllib.parse.unquote(base_lang)
+        target_lang = urllib.parse.unquote(target_lang)
 
         # convert card_detail to json
         card_detail = json.loads(card_detail)
@@ -66,10 +68,14 @@ def handler(event, context):
             # get user card_order
             card_order = response["Item"]["card_order"]
 
-        if pair == "en2jp":
+        if base_lang == "jp" and target_lang == "en":
             card_table_name = ddb.Table(os.environ["EN2JP_CARD_TABLE_NAME"])
+        
+        elif base_lang == "en" and target_lang == "de":
+            card_table_name = ddb.Table(os.environ["DE2EN_CARD_TABLE_NAME"])
         else:
-            card_table_name = ddb.Table(os.environ["FF_CARD_TABLE_NAME"])
+            raise ValueError(f"Invalid request. The provided language pair '{base_lang}-{target_lang}' is not supported")
+            # card_table_name = ddb.Table(os.environ["FF_CARD_TABLE_NAME"])
         
         # check if card already exists
         response = card_table_name.get_item(
@@ -136,4 +142,4 @@ def handler(event, context):
         "body": json.dumps(resp, cls=DecimalEncoder)
     }
 
-# http POST "${ENDPOINT_URL}/user/user01/add_card/123456/{\"words\":{\"en\":[\"see\",\"watch\",\"look\"],\"jp\":[\"見る\"]},\"sentences\":{\"en\":[\"I can see the mountains from my window.\",\"Let's watch a movie tonight.\",\"She looked at me and smiled.\"],\"jp\":[\"私は窓から山を見ることができます。\",\"今晩映画を見ましょう。\",\"彼女は私を見て笑顔を見せた。\"]}}"
+# http POST "${ENDPOINT_URL}/0000/post_card/jp/en/1234/{\"words\":{\"en\":[\"see\",\"watch\",\"look\"],\"jp\":[\"見る\"]},\"sentences\":{\"en\":[\"I can see the mountains from my window.\",\"Let's watch a movie tonight.\",\"She looked at me and smiled.\"],\"jp\":[\"私は窓から山を見ることができます。\",\"今晩映画を見ましょう。\",\"彼女は私を見て笑顔を見せた。\"]}}"

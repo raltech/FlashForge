@@ -33,13 +33,16 @@ def handler(event, context):
         # get path parameters
         path_params = event.get("pathParameters", {})
         user_id = path_params.get("user_id", "")
-        card_id = path_params.get("card_id", "")
-        pair = path_params.get("lang_pair", "")
+        card_id = path_params.get("card_id", "")        
+        base_lang = path_params.get("base_lang", "")
+        target_lang = path_params.get("target_lang", "")
+
 
         # decode url encoded parameters
         user_id = urllib.parse.unquote(user_id)
         card_id = urllib.parse.unquote(card_id)
-        pair = urllib.parse.unquote(pair)
+        base_lang = urllib.parse.unquote(base_lang)
+        target_lang = urllib.parse.unquote(target_lang)
 
         # validate parameters
         if not user_id:
@@ -56,10 +59,12 @@ def handler(event, context):
         if "Item" not in response:
             raise ValueError(f"User '{user_id}' not found")
         
-        if pair == "en2jp":
+        if base_lang == "jp" and target_lang == "en":
             card_table_name = ddb.Table(os.environ["EN2JP_CARD_TABLE_NAME"])
+        elif base_lang == "en" and target_lang == "de":
+            card_table_name = ddb.Table(os.environ["DE2EN_CARD_TABLE_NAME"])
         else:
-            card_table_name = ddb.Table(os.environ["FF_CARD_TABLE_NAME"])
+            raise ValueError(f"Invalid request. The provided language pair '{base_lang}-{target_lang}' is not supported")
         
         # check if card exists
         response = card_table_name.get_item(

@@ -1,0 +1,1 @@
+Generate a list of at least 2, but no more than 5, English words or phrases that best represent the given German input. Words should be listed in order of their frequency of usage. If the German input has multiple meanings, try to include different translations that cover these meanings. If the German input does not have an English equivalent, return an error message.
